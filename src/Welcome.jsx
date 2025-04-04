@@ -21,7 +21,6 @@ import shalinaLogo from "./assets/shalina-logo.png";
 import vitaBiotics from "./assets/vitabiotics-logo.png";
 import "./index.css";
 
-// List of Nigerian states and diaspora options
 const states = [
   "Abia",
   "Adamawa",
@@ -65,7 +64,6 @@ const states = [
   "Canada",
 ];
 
-// Partner logos array
 const partnerLogos = [
   emzorLogo,
   alphaPharmLogo,
@@ -85,10 +83,8 @@ const partnerLogos = [
   vitaBiotics,
 ];
 
-// API base URL from environment
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "https://ahapnng.org";
 
-// Reusable Modal Component
 function Modal({ title, children, onClose }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -163,6 +159,8 @@ export function Welcome() {
     if (!formData.state) newErrors.state = "State/Country is required.";
     if (!formData.regId.trim())
       newErrors.regId = "Registration ID is required.";
+    if (image && image.size > 5 * 1024 * 1024)
+      newErrors.image = "Image must be less than 5 MB."; // 5 MB limit
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -177,6 +175,14 @@ export function Welcome() {
     const file = e.target.files[0];
     setImage(file);
     setImagePreview(file ? URL.createObjectURL(file) : null);
+    if (file && file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({
+        ...prev,
+        image: "Image must be less than 5 MB.",
+      }));
+    } else {
+      setErrors((prev) => ({ ...prev, image: null }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -225,7 +231,9 @@ export function Welcome() {
     try {
       const response = await axios.get(
         `${API_URL}/api/event-id-pdf/${eventId}`,
-        { responseType: "blob" }
+        {
+          responseType: "blob",
+        }
       );
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
@@ -430,12 +438,22 @@ export function Welcome() {
                   <input
                     name="regId"
                     type="text"
-                    placeholder="Registration ID (e.g., REG001)"
+                    placeholder="Registration ID (e.g., REG123456)"
                     value={formData.regId}
                     onChange={handleChange}
                     required
                     className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
                   />
+                  <p className="text-gray-600 text-xs mt-1">
+                    Contact admin at{" "}
+                    <a
+                      href="mailto:info@ahapn.org"
+                      className="text-[#006400] underline"
+                    >
+                      info@ahapn.org
+                    </a>{" "}
+                    to purchase a registration ID.
+                  </p>
                   {errors.regId && (
                     <p className="text-red-500 text-xs mt-1">{errors.regId}</p>
                   )}
@@ -447,11 +465,11 @@ export function Welcome() {
                     onChange={handleImageChange}
                     className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg"
                   />
-                  {!image && (
-                    <p className="text-gray-600 text-xs mt-1">
-                      Note: Image is optional but recommended for
-                      identification.
-                    </p>
+                  <p className="text-gray-600 text-xs mt-1">
+                    Optional: Upload an image (max 5 MB).
+                  </p>
+                  {errors.image && (
+                    <p className="text-red-500 text-xs mt-1">{errors.image}</p>
                   )}
                   {imagePreview && (
                     <img
