@@ -222,6 +222,31 @@ export function Welcome() {
     }
   };
 
+  const retrieveId = async () => {
+    if (!retrieveEmail) {
+      setErrorMessage("Please enter your email to retrieve your ID.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/waitlist/${retrieveEmail}`
+      );
+      setEventId(response.data.eventId);
+      setSuccessMessage("ID retrieved successfully!");
+      setErrorMessage("");
+      setShowForm(null);
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message ||
+          "Error retrieving ID. Please check your email."
+      );
+      setSuccessMessage("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const downloadId = async () => {
     if (!eventId) {
       setErrorMessage("No event ID available. Please retrieve your ID first.");
@@ -251,31 +276,6 @@ export function Welcome() {
       setErrorMessage(
         "Error downloading ID PDF: " +
           (error.response?.data?.message || error.message)
-      );
-      setSuccessMessage("");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const retrieveId = async () => {
-    if (!retrieveEmail) {
-      setErrorMessage("Please enter your email to retrieve your ID.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await axios.get(
-        `${API_URL}/api/waitlist/${retrieveEmail}`
-      );
-      setEventId(response.data.eventId);
-      setSuccessMessage("ID retrieved successfully!");
-      setErrorMessage("");
-      setShowForm(null);
-    } catch (error) {
-      setErrorMessage(
-        error.response?.data?.message ||
-          "Error retrieving ID. Please check your email."
       );
       setSuccessMessage("");
     } finally {
