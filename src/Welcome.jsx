@@ -87,8 +87,8 @@ const API_URL = import.meta.env.VITE_API_URL || "https://ahapnng.org";
 
 function Modal({ title, children, onClose }) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4 my-4 max-h-[90vh] overflow-y-auto hide-scrollbar">
         <h3 className="text-xl md:text-2xl text-[#006400] font-bold mb-4">
           {title}
         </h3>
