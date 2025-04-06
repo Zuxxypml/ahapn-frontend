@@ -447,10 +447,10 @@ export function Welcome() {
                   <p className="text-gray-600 text-xs mt-1">
                     Contact admin at{" "}
                     <a
-                      href="mailto:info@ahapn.org"
+                      href="mailto:ahapn2021@gmail.com"
                       className="text-[#006400] underline"
                     >
-                      info@ahapn.org
+                      ahapn2021@gmail.com
                     </a>{" "}
                     to purchase a registration ID.
                   </p>
