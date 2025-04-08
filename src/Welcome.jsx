@@ -305,8 +305,11 @@ export function Welcome() {
 
         <main>
           <h1 className="text-3xl md:text-5xl font-bold text-[#006400] mb-3 md:mb-4">
-            Edo 2025 – 26th Annual National Scientific Conference
+            Edo 2025
           </h1>
+          <h2 className="text-3xl md:text-5xl font-bold text-[#006400] mb-3 md:mb-4">
+            26th Annual National Scientific Conference
+          </h2>
           <div className="flex justify-center mb-4 md:mb-6">
             <div className="w-16 md:w-24 h-16 md:h-24 bg-[#006400] rounded-full flex items-center justify-center text-white text-xl md:text-2xl font-bold relative">
               26th
