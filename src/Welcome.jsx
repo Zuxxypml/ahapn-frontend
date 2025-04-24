@@ -1,4 +1,3 @@
-// src/Welcome.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ahapnLogo from "./assets/ahapn-logo.png";
@@ -157,10 +156,12 @@ export function Welcome() {
     else if (!/^\+?[\d\s-]{10,}$/.test(formData.phoneNumber))
       newErrors.phoneNumber = "Phone number is invalid.";
     if (!formData.state) newErrors.state = "State/Country is required.";
-    if (!formData.regId.trim())
-      newErrors.regId = "Registration ID is required.";
+    if (!formData.regId.trim()) newErrors.regId = "Reg Number is required.";
+    else if (!/^\d{4,6}$/.test(formData.regId.trim()))
+      newErrors.regId =
+        "Reg Number must be a 4 to 6-digit number (e.g., 6438 or 123456).";
     if (image && image.size > 5 * 1024 * 1024)
-      newErrors.image = "Image must be less than 5 MB."; // 5 MB limit
+      newErrors.image = "Image must be less than 5 MB.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -193,7 +194,13 @@ export function Welcome() {
     }
     setLoading(true);
     const data = new FormData();
-    Object.keys(formData).forEach((key) => data.append(key, formData[key]));
+    Object.keys(formData).forEach((key) => {
+      if (key === "regId") {
+        data.append(key, formData[key].trim().padStart(6, "0")); // Pad regId to 6 digits
+      } else {
+        data.append(key, formData[key]);
+      }
+    });
     if (image) data.append("image", image);
 
     try {
@@ -441,7 +448,7 @@ export function Welcome() {
                   <input
                     name="regId"
                     type="text"
-                    placeholder="Registration ID (e.g., REG123456)"
+                    placeholder="Enter your Reg Number (e.g., 6438, 21175, or 123456)"
                     value={formData.regId}
                     onChange={handleChange}
                     required
@@ -455,7 +462,7 @@ export function Welcome() {
                     >
                       ahapn2021@gmail.com
                     </a>{" "}
-                    to purchase a registration ID.
+                    to purchase a Reg Number.
                   </p>
                   {errors.regId && (
                     <p className="text-red-500 text-xs mt-1">{errors.regId}</p>
