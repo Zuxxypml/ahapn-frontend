@@ -289,6 +289,19 @@ export function Welcome() {
       setLoading(false);
     }
   };
+  const [registeredCount, setRegisteredCount] = useState(null);
+
+  useEffect(() => {
+    async function fetchRegisteredCount() {
+      try {
+        const response = await axios.get(`${API_URL}/api/waitlist/count`);
+        setRegisteredCount(response.data.count);
+      } catch (error) {
+        console.error("Error fetching registered count:", error);
+      }
+    }
+    fetchRegisteredCount();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-100 to-green-200">
@@ -331,6 +344,12 @@ export function Welcome() {
               <span className="absolute right-0 top-1/2 w-1 md:w-2 h-6 md:h-8 bg-[#006400] transform -translate-y-1/2"></span>
             </div>
           </div>
+          {registeredCount !== null && (
+            <h4 className="text-xl md:text-2xl font-bold text-[#006400] mb-3">
+              {registeredCount} Registered
+            </h4>
+          )}
+
           <h3 className="text-xl md:text-2xl text-[#006400] mb-3 md:mb-4">
             Theme: Innovations in Pharmaceutical Care Delivery for Equitable
             Patients’ Healthcare
@@ -455,12 +474,12 @@ export function Welcome() {
                     className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
                   />
                   <p className="text-gray-600 text-xs mt-1">
-                    Contact admin at{" "}
+                    Contact admin on{" "}
                     <a
-                      href="mailto:ahapn2021@gmail.com"
+                      href="tel:08079238160"
                       className="text-[#006400] underline"
                     >
-                      ahapn2021@gmail.com
+                      08079238160
                     </a>{" "}
                     to purchase a Reg Number.
                   </p>
