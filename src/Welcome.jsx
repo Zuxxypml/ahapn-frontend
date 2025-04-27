@@ -172,7 +172,6 @@ export function Welcome() {
       newErrors.phoneNumber = "Invalid phone number.";
 
     if (!formData.state) newErrors.state = "State is required.";
-
     if (!formData.regId.trim())
       newErrors.regId = "Registration number is required.";
     else if (!/^\d{4,6}$/.test(formData.regId.trim()))
@@ -181,10 +180,11 @@ export function Welcome() {
     if (lateRegistrationPeriod && !formData.lateRegId.trim()) {
       newErrors.lateRegId = "Late Registration Code required.";
     }
-    if (!image) return toast.error("Please upload an image.");
 
-    if (image && image.size > 5 * 1024 * 1024)
-      newErrors.image = "Image must be less than 5 MB.";
+    if (!image) {
+      newErrors.image = "Image is required.";
+      toast.error("Please upload a valid image before submitting.");
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -574,7 +574,7 @@ export function Welcome() {
                   </div>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !image}
                     className="w-full p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
                   >
                     {loading ? "Submitting..." : "Submit"}
