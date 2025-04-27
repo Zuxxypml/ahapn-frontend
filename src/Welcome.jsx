@@ -181,6 +181,7 @@ export function Welcome() {
     if (lateRegistrationPeriod && !formData.lateRegId.trim()) {
       newErrors.lateRegId = "Late Registration Code required.";
     }
+    if (!image) return toast.error("Please upload an image.");
 
     if (image && image.size > 5 * 1024 * 1024)
       newErrors.image = "Image must be less than 5 MB.";
@@ -201,6 +202,7 @@ export function Welcome() {
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Only JPEG and PNG files are allowed.");
+      e.target.value = null; // 🚀 clear the input file if invalid
       setImage(null);
       setImagePreview(null);
       return;
@@ -208,6 +210,7 @@ export function Welcome() {
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image must be less than 5MB.");
+      e.target.value = null; // 🚀 clear the input file if too big
       setImage(null);
       setImagePreview(null);
       return;
