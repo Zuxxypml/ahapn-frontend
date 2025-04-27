@@ -111,6 +111,7 @@ export function Welcome() {
     phoneNumber: "",
     state: "",
     regId: "",
+    lateRegId: "",
   });
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -118,14 +119,17 @@ export function Welcome() {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [eventId, setEventId] = useState("");
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-  const [showForm, setShowForm] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(null);
   const [retrieveEmail, setRetrieveEmail] = useState("");
+  const [registeredCount, setRegisteredCount] = useState(null);
+
+  const today = new Date();
+  const lateRegistrationStart = new Date("2025-07-01"); // Adjust when late registration start
+  const lateRegistrationPeriod = today >= lateRegistrationStart;
 
   function calculateTimeLeft() {
     const eventDate = new Date("2025-08-04");
-    const today = new Date();
     const diff = eventDate - today;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -133,6 +137,7 @@ export function Welcome() {
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
     return { days, hours, minutes, seconds };
   }
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
   useEffect(() => {
     const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
@@ -140,28 +145,44 @@ export function Welcome() {
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-    };
-  }, [imagePreview]);
+    async function fetchRegisteredCount() {
+      try {
+        const res = await axios.get(`${API_URL}/api/waitlist/count`);
+        setRegisteredCount(res.data.count);
+      } catch (err) {
+        console.error("Error fetching registered count", err);
+      }
+    }
+    fetchRegisteredCount();
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
+
     if (!formData.name.trim()) newErrors.name = "Name is required.";
     if (!formData.email.trim()) newErrors.email = "Email is required.";
     else if (!/^\S+@\S+\.\S+$/.test(formData.email))
-      newErrors.email = "Email is invalid.";
+      newErrors.email = "Invalid Email.";
+
     if (!formData.phoneNumber.trim())
-      newErrors.phoneNumber = "Phone number is required.";
+      newErrors.phoneNumber = "Phone number required.";
     else if (!/^\+?[\d\s-]{10,}$/.test(formData.phoneNumber))
-      newErrors.phoneNumber = "Phone number is invalid.";
-    if (!formData.state) newErrors.state = "State/Country is required.";
-    if (!formData.regId.trim()) newErrors.regId = "Reg Number is required.";
+      newErrors.phoneNumber = "Invalid phone number.";
+
+    if (!formData.state) newErrors.state = "State is required.";
+
+    if (!formData.regId.trim())
+      newErrors.regId = "Registration number is required.";
     else if (!/^\d{4,6}$/.test(formData.regId.trim()))
-      newErrors.regId =
-        "Reg Number must be a 4 to 6-digit number (e.g., 6438 or 123456).";
+      newErrors.regId = "Registration number must be 4 to 6 digits.";
+
+    if (lateRegistrationPeriod && !formData.lateRegId.trim()) {
+      newErrors.lateRegId = "Late Registration Code required.";
+    }
+
     if (image && image.size > 5 * 1024 * 1024)
       newErrors.image = "Image must be less than 5 MB.";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -177,10 +198,7 @@ export function Welcome() {
     setImage(file);
     setImagePreview(file ? URL.createObjectURL(file) : null);
     if (file && file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({
-        ...prev,
-        image: "Image must be less than 5 MB.",
-      }));
+      setErrors((prev) => ({ ...prev, image: "Image must be less than 5MB" }));
     } else {
       setErrors((prev) => ({ ...prev, image: null }));
     }
@@ -189,14 +207,16 @@ export function Welcome() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      setErrorMessage("Please fix the errors above before submitting.");
+      setErrorMessage("Fix form errors before submitting.");
       return;
     }
+
     setLoading(true);
+
     const data = new FormData();
     Object.keys(formData).forEach((key) => {
       if (key === "regId") {
-        data.append(key, formData[key].trim().padStart(6, "0")); // Pad regId to 6 digits
+        data.append(key, formData[key].trim().padStart(6, "0"));
       } else {
         data.append(key, formData[key]);
       }
@@ -204,18 +224,19 @@ export function Welcome() {
     if (image) data.append("image", image);
 
     try {
-      const response = await axios.post(`${API_URL}/api/waitlist`, data, {
+      const res = await axios.post(`${API_URL}/api/waitlist`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setSuccessMessage(response.data.message);
+      setSuccessMessage(res.data.message);
       setErrorMessage("");
-      setEventId(response.data.eventId);
+      setEventId(res.data.eventId);
       setFormData({
         name: "",
         email: "",
         phoneNumber: "",
         state: "",
         regId: "",
+        lateRegId: "",
       });
       setImage(null);
       setImagePreview(null);
@@ -231,23 +252,20 @@ export function Welcome() {
 
   const retrieveId = async () => {
     if (!retrieveEmail) {
-      setErrorMessage("Please enter your email to retrieve your ID.");
+      setErrorMessage("Enter your email to retrieve ID.");
       return;
     }
+
     setLoading(true);
+
     try {
-      const response = await axios.get(
-        `${API_URL}/api/waitlist/${retrieveEmail}`
-      );
-      setEventId(response.data.eventId);
+      const res = await axios.get(`${API_URL}/api/waitlist/${retrieveEmail}`);
+      setEventId(res.data.eventId);
       setSuccessMessage("ID retrieved successfully!");
       setErrorMessage("");
       setShowForm(null);
     } catch (error) {
-      setErrorMessage(
-        error.response?.data?.message ||
-          "Error retrieving ID. Please check your email."
-      );
+      setErrorMessage(error.response?.data?.message || "Error retrieving ID.");
       setSuccessMessage("");
     } finally {
       setLoading(false);
@@ -256,57 +274,30 @@ export function Welcome() {
 
   const downloadId = async () => {
     if (!eventId) {
-      setErrorMessage("No event ID available. Please retrieve your ID first.");
+      setErrorMessage("Retrieve your Event ID first.");
       return;
     }
     setLoading(true);
     try {
       const response = await axios.get(
         `${API_URL}/api/event-id-pdf/${eventId}`,
-        {
-          responseType: "blob",
-        }
+        { responseType: "blob" }
       );
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.download = `event_id_${
-        formData.email || retrieveEmail || "user"
-      }.pdf`;
+      link.download = `event_id_${retrieveEmail || formData.email}.pdf`;
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      setSuccessMessage("PDF downloaded successfully!");
-      setErrorMessage("");
+      link.remove();
+      URL.revokeObjectURL(url);
+      setSuccessMessage("Downloaded successfully!");
     } catch (error) {
-      setErrorMessage(
-        "Error downloading ID PDF: " +
-          (error.response?.data?.message || error.message)
-      );
-      setSuccessMessage("");
+      setErrorMessage("Error downloading ID.");
     } finally {
       setLoading(false);
     }
   };
-  // Inside your component (e.g Welcome.jsx)
-  const today = new Date();
-  const lateRegistrationStart = new Date("2025-04-26"); // 👈 set your late reg start date here
-  const lateRegistrationPeriod = today >= lateRegistrationStart;
-
-  const [registeredCount, setRegisteredCount] = useState(null);
-
-  useEffect(() => {
-    async function fetchRegisteredCount() {
-      try {
-        const response = await axios.get(`${API_URL}/api/waitlist/count`);
-        setRegisteredCount(response.data.count);
-      } catch (error) {
-        console.error("Error fetching registered count:", error);
-      }
-    }
-    fetchRegisteredCount();
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-100 to-green-200">
