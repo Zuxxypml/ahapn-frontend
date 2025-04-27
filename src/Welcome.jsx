@@ -18,6 +18,8 @@ import realsLogo from "./assets/reals-logo.png";
 import samLogo from "./assets/sam-logo.png";
 import shalinaLogo from "./assets/shalina-logo.png";
 import vitaBiotics from "./assets/vitabiotics-logo.png";
+import { Toaster, toast } from "react-hot-toast";
+
 import "./index.css";
 
 const states = [
@@ -192,16 +194,28 @@ export function Welcome() {
     setSuccessMessage("");
     setErrorMessage("");
   };
-
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    setImage(file);
-    setImagePreview(file ? URL.createObjectURL(file) : null);
-    if (file && file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, image: "Image must be less than 5MB" }));
-    } else {
-      setErrors((prev) => ({ ...prev, image: null }));
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPEG and PNG files are allowed.");
+      setImage(null);
+      setImagePreview(null);
+      return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB.");
+      setImage(null);
+      setImagePreview(null);
+      return;
+    }
+
+    setErrors((prev) => ({ ...prev, image: null }));
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e) => {
@@ -227,7 +241,8 @@ export function Welcome() {
       const res = await axios.post(`${API_URL}/api/waitlist`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setSuccessMessage(res.data.message);
+      toast.success(res.data.message || "Registered successfully!");
+      setSuccessMessage("");
       setErrorMessage("");
       setEventId(res.data.eventId);
       setFormData({
@@ -243,8 +258,9 @@ export function Welcome() {
       setErrors({});
       setShowForm(null);
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || "Something went wrong!");
+      toast.error(error.response?.data?.message || "Something went wrong!");
       setSuccessMessage("");
+      setErrorMessage("");
     } finally {
       setLoading(false);
     }
@@ -252,7 +268,10 @@ export function Welcome() {
 
   const retrieveId = async () => {
     if (!retrieveEmail) {
-      setErrorMessage("Enter your email to retrieve ID.");
+      toast.error("Enter your email to retrieve ID.");
+      setSuccessMessage("");
+      setErrorMessage("");
+
       return;
     }
 
@@ -261,12 +280,14 @@ export function Welcome() {
     try {
       const res = await axios.get(`${API_URL}/api/waitlist/${retrieveEmail}`);
       setEventId(res.data.eventId);
-      setSuccessMessage("ID retrieved successfully!");
+      toast.success("ID retrieved successfully!");
+      setSuccessMessage("");
       setErrorMessage("");
       setShowForm(null);
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || "Error retrieving ID.");
+      toast.error(error.response?.data?.message || "Error retrieving ID.");
       setSuccessMessage("");
+      setErrorMessage("");
     } finally {
       setLoading(false);
     }
@@ -291,185 +312,199 @@ export function Welcome() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      setSuccessMessage("Downloaded successfully!");
+      toast.success("Downloaded successfully!");
+      setSuccessMessage("");
+      setErrorMessage("");
     } catch (error) {
-      setErrorMessage("Error downloading ID.");
+      toast.error("Error downloading ID.");
+      setSuccessMessage("");
+      setErrorMessage("");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-100 to-green-200">
-      <div className="container mx-auto p-4 md:p-6 text-center">
-        <header className="flex flex-col md:flex-row items-center justify-center mb-6 md:mb-8">
-          <img
-            src={ahapnLogo}
-            alt="AHAPN Logo"
-            className="w-16 md:w-24 h-auto mb-4 md:mb-0 md:mr-4"
-          />
-          <h2 className="text-xl md:text-2xl font-bold text-gray-800">
-            Association of Hospital and Administrative Pharmacists of Nigeria
-            (AHAPN) Presents
-          </h2>
-          <img
-            src={beninMask}
-            alt="Benin Mask"
-            className="w-24 md:w-36 h-auto mt-4 md:mt-0 md:ml-4"
-          />
-        </header>
+    <>
+      <Toaster position="top-center" reverseOrder={false} />
 
-        <main>
-          <h1 className="text-3xl md:text-5xl font-bold text-[#006400] mb-3 md:mb-4">
-            Edo 2025
-          </h1>
-          <h2 className="text-3xl md:text-5xl font-bold text-[#006400] mb-3 md:mb-4">
-            26th Annual National Scientific Conference
-          </h2>
-          <div className="flex justify-center mb-4 md:mb-6">
-            <div className="w-16 md:w-24 h-16 md:h-24 bg-[#006400] rounded-full flex items-center justify-center text-white text-xl md:text-2xl font-bold relative">
-              26th
-              <span className="absolute text-base md:text-lg">+</span>
+      <div className="min-h-screen bg-gradient-to-b from-green-100 to-green-200">
+        <div className="container mx-auto p-4 md:p-6 text-center">
+          <header className="flex flex-col md:flex-row items-center justify-center mb-6 md:mb-8">
+            <img
+              src={ahapnLogo}
+              alt="AHAPN Logo"
+              className="w-16 md:w-24 h-auto mb-4 md:mb-0 md:mr-4"
+            />
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+              Association of Hospital and Administrative Pharmacists of Nigeria
+              (AHAPN) Presents
+            </h2>
+            <img
+              src={beninMask}
+              alt="Benin Mask"
+              className="w-24 md:w-36 h-auto mt-4 md:mt-0 md:ml-4"
+            />
+          </header>
+
+          <main>
+            <h1 className="text-3xl md:text-5xl font-bold text-[#006400] mb-3 md:mb-4">
+              Edo 2025
+            </h1>
+            <h2 className="text-3xl md:text-5xl font-bold text-[#006400] mb-3 md:mb-4">
+              26th Annual National Scientific Conference
+            </h2>
+            <div className="flex justify-center mb-4 md:mb-6">
+              <div className="w-16 md:w-24 h-16 md:h-24 bg-[#006400] rounded-full flex items-center justify-center text-white text-xl md:text-2xl font-bold relative">
+                26th
+                <span className="absolute text-base md:text-lg">+</span>
+              </div>
             </div>
-          </div>
-          <div className="mb-4 md:mb-6">
-            <div className="inline-block bg-white border-2 border-[#006400] px-4 py-2 md:px-6 md:py-3 rounded-lg text-xl md:text-3xl text-[#006400] font-bold relative">
-              {timeLeft.days} Days, {timeLeft.hours} Hrs, {timeLeft.minutes}{" "}
-              Mins, {timeLeft.seconds} Secs
-              <span className="absolute left-0 top-1/2 w-1 md:w-2 h-6 md:h-8 bg-[#006400] transform -translate-y-1/2"></span>
-              <span className="absolute right-0 top-1/2 w-1 md:w-2 h-6 md:h-8 bg-[#006400] transform -translate-y-1/2"></span>
+            <div className="mb-4 md:mb-6">
+              <div className="inline-block bg-white border-2 border-[#006400] px-4 py-2 md:px-6 md:py-3 rounded-lg text-xl md:text-3xl text-[#006400] font-bold relative">
+                {timeLeft.days} Days, {timeLeft.hours} Hrs, {timeLeft.minutes}{" "}
+                Mins, {timeLeft.seconds} Secs
+                <span className="absolute left-0 top-1/2 w-1 md:w-2 h-6 md:h-8 bg-[#006400] transform -translate-y-1/2"></span>
+                <span className="absolute right-0 top-1/2 w-1 md:w-2 h-6 md:h-8 bg-[#006400] transform -translate-y-1/2"></span>
+              </div>
             </div>
-          </div>
-          {registeredCount !== null && (
-            <h4 className="text-xl md:text-2xl font-bold text-[#006400] mb-3">
-              {registeredCount} Registered
-            </h4>
-          )}
+            {registeredCount !== null && (
+              <h4 className="text-xl md:text-2xl font-bold text-[#006400] mb-3">
+                {registeredCount} Registered
+              </h4>
+            )}
 
-          <h3 className="text-xl md:text-2xl text-[#006400] mb-3 md:mb-4">
-            Theme: Innovations in Pharmaceutical Care Delivery for Equitable
-            Patients’ Healthcare
-          </h3>
-          <h2 className="text-2xl md:text-3xl font-bold text-[#006400] mb-6 md:mb-8">
-            4th – 9th August 2025
-          </h2>
+            <h3 className="text-xl md:text-2xl text-[#006400] mb-3 md:mb-4">
+              Theme: Innovations in Pharmaceutical Care Delivery for Equitable
+              Patients’ Healthcare
+            </h3>
+            <h2 className="text-2xl md:text-3xl font-bold text-[#006400] mb-6 md:mb-8">
+              4th – 9th August 2025
+            </h2>
 
-          <div className="mb-8 md:mb-12">
-            <h4 className="text-lg md:text-xl text-[#006400] mb-3 md:mb-4">
-              Partners:
-            </h4>
-            <div className="flex justify-center flex-wrap gap-4 md:gap-8">
-              {partnerLogos.map((logo, index) => (
-                <img
-                  key={index}
-                  src={logo}
-                  alt={`Partner ${index + 1}`}
-                  className="w-16 h-8 md:w-20 md:h-10 object-contain"
-                />
-              ))}
+            <div className="mb-8 md:mb-12">
+              <h4 className="text-lg md:text-xl text-[#006400] mb-3 md:mb-4">
+                Partners:
+              </h4>
+              <div className="flex justify-center flex-wrap gap-4 md:gap-8">
+                {partnerLogos.map((logo, index) => (
+                  <img
+                    key={index}
+                    src={logo}
+                    alt={`Partner ${index + 1}`}
+                    className="w-16 h-8 md:w-20 md:h-10 object-contain"
+                  />
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="mb-8 flex flex-col md:flex-row justify-center gap-4">
-            <button
-              onClick={() => setShowForm("waitlist")}
-              className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
-              aria-label="Join the Waitlist"
-            >
-              Join the Waitlist
-            </button>
-            <button
-              onClick={() => setShowForm("retrieve")}
-              className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
-              aria-label="Download ID for Returning Users"
-            >
-              Download ID (Returning Users)
-            </button>
-          </div>
-
-          {loading && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <p className="text-white text-lg">Loading...</p>
+            <div className="mb-8 flex flex-col md:flex-row justify-center gap-4">
+              <button
+                onClick={() => setShowForm("waitlist")}
+                className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
+                aria-label="Join the Waitlist"
+              >
+                Join the Waitlist
+              </button>
+              <button
+                onClick={() => setShowForm("retrieve")}
+                className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
+                aria-label="Download ID for Returning Users"
+              >
+                Download ID (Returning Users)
+              </button>
             </div>
-          )}
 
-          {showForm === "waitlist" && (
-            <Modal title="Join the Waitlist" onClose={() => setShowForm(null)}>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <input
-                    name="name"
-                    type="text"
-                    placeholder="Your Name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
-                  />
-                  {errors.name && (
-                    <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-                  )}
-                </div>
-                <div>
-                  <input
-                    name="email"
-                    type="email"
-                    placeholder="Your Email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                  )}
-                </div>
-                <div>
-                  <input
-                    name="phoneNumber"
-                    type="tel"
-                    placeholder="Phone Number"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    required
-                    className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
-                  />
-                  {errors.phoneNumber && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.phoneNumber}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <select
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    required
-                    className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
-                  >
-                    <option value="">Select State/Country</option>
-                    {states.map((stateOption) => (
-                      <option key={stateOption} value={stateOption}>
-                        {stateOption}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.state && (
-                    <p className="text-red-500 text-xs mt-1">{errors.state}</p>
-                  )}
-                </div>
-                <div>
-                  <input
-                    name="regId"
-                    type="text"
-                    placeholder="Enter your Reg Number (e.g., 6438, 21175, or 123456)"
-                    value={formData.regId}
-                    onChange={handleChange}
-                    required
-                    className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
-                  />
-                  {/* <p className="text-gray-600 text-xs mt-1">
+            {loading && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <p className="text-white text-lg">Loading...</p>
+              </div>
+            )}
+
+            {showForm === "waitlist" && (
+              <Modal
+                title="Join the Waitlist"
+                onClose={() => setShowForm(null)}
+              >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <input
+                      name="name"
+                      type="text"
+                      placeholder="Your Name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                    />
+                    {errors.name && (
+                      <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      name="email"
+                      type="email"
+                      placeholder="Your Email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                    />
+                    {errors.email && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      name="phoneNumber"
+                      type="tel"
+                      placeholder="Phone Number"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                      required
+                      className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                    />
+                    {errors.phoneNumber && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.phoneNumber}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <select
+                      name="state"
+                      value={formData.state}
+                      onChange={handleChange}
+                      required
+                      className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                    >
+                      <option value="">Select State/Country</option>
+                      {states.map((stateOption) => (
+                        <option key={stateOption} value={stateOption}>
+                          {stateOption}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.state && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.state}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      name="regId"
+                      type="text"
+                      placeholder="Enter your Reg Number (e.g., 6438, 21175, or 123456)"
+                      value={formData.regId}
+                      onChange={handleChange}
+                      required
+                      className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                    />
+                    {/* <p className="text-gray-600 text-xs mt-1">
                     Contact admin on{" "}
                     <a
                       href="tel:08079238160"
@@ -479,131 +514,136 @@ export function Welcome() {
                     </a>{" "}
                     to purchase a Reg Number.
                   </p> */}
-                  {errors.regId && (
-                    <p className="text-red-500 text-xs mt-1">{errors.regId}</p>
+                    {errors.regId && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.regId}
+                      </p>
+                    )}
+                  </div>
+                  {/* Conditionally show Late Registration Code */}
+                  {lateRegistrationPeriod && (
+                    <div>
+                      <input
+                        name="lateRegId"
+                        type="text"
+                        placeholder="Late Registration Code"
+                        value={formData.lateRegId}
+                        onChange={handleChange}
+                        required
+                        className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                      />
+
+                      <p className="text-gray-600 text-xs mt-1">
+                        Contact admin on{" "}
+                        <a
+                          href="tel:08079238160"
+                          className="text-[#006400] underline"
+                        >
+                          08079238160
+                        </a>{" "}
+                        to purchase late Reg code.
+                      </p>
+                    </div>
                   )}
-                </div>
-                {/* Conditionally show Late Registration Code */}
-                {lateRegistrationPeriod && (
+
                   <div>
                     <input
-                      name="lateRegId"
-                      type="text"
-                      placeholder="Late Registration Code"
-                      value={formData.lateRegId}
-                      onChange={handleChange}
-                      required
-                      className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg"
                     />
-
                     <p className="text-gray-600 text-xs mt-1">
-                      Contact admin on{" "}
-                      <a
-                        href="tel:08079238160"
-                        className="text-[#006400] underline"
-                      >
-                        08079238160
-                      </a>{" "}
-                      to purchase late Reg code.
+                      Optional: Upload an image (max 5 MB).
                     </p>
+                    {errors.image && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.image}
+                      </p>
+                    )}
+                    {imagePreview && (
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-24 h-24 mt-2 rounded"
+                      />
+                    )}
                   </div>
-                )}
-
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg"
-                  />
-                  <p className="text-gray-600 text-xs mt-1">
-                    Optional: Upload an image (max 5 MB).
-                  </p>
-                  {errors.image && (
-                    <p className="text-red-500 text-xs mt-1">{errors.image}</p>
-                  )}
-                  {imagePreview && (
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-24 h-24 mt-2 rounded"
-                    />
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
-                >
-                  {loading ? "Submitting..." : "Submit"}
-                </button>
-              </form>
-              {successMessage && (
-                <p className="mt-4 text-[#006400]">{successMessage}</p>
-              )}
-              {errorMessage && (
-                <p className="mt-4 text-red-500">{errorMessage}</p>
-              )}
-            </Modal>
-          )}
-
-          {showForm === "retrieve" && (
-            <Modal title="Download Your ID" onClose={() => setShowForm(null)}>
-              <div className="space-y-4">
-                <input
-                  type="email"
-                  placeholder="Enter your email to retrieve your ID"
-                  value={retrieveEmail}
-                  onChange={(e) => setRetrieveEmail(e.target.value)}
-                  className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
-                />
-                <button
-                  onClick={retrieveId}
-                  disabled={loading}
-                  className="w-full p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
-                >
-                  {loading ? "Retrieving..." : "Retrieve ID"}
-                </button>
-              </div>
-              {eventId && (
-                <div className="mt-4">
-                  <p className="text-lg md:text-xl text-[#006400] mb-3">
-                    Your Event ID: {eventId}
-                  </p>
                   <button
-                    onClick={downloadId}
+                    type="submit"
                     disabled={loading}
-                    className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
+                    className="w-full p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
                   >
-                    {loading ? "Downloading..." : "Download ID (PDF)"}
+                    {loading ? "Submitting..." : "Submit"}
+                  </button>
+                </form>
+                {successMessage && (
+                  <p className="mt-4 text-[#006400]">{successMessage}</p>
+                )}
+                {errorMessage && (
+                  <p className="mt-4 text-red-500">{errorMessage}</p>
+                )}
+              </Modal>
+            )}
+
+            {showForm === "retrieve" && (
+              <Modal title="Download Your ID" onClose={() => setShowForm(null)}>
+                <div className="space-y-4">
+                  <input
+                    type="email"
+                    placeholder="Enter your email to retrieve your ID"
+                    value={retrieveEmail}
+                    onChange={(e) => setRetrieveEmail(e.target.value)}
+                    className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                  />
+                  <button
+                    onClick={retrieveId}
+                    disabled={loading}
+                    className="w-full p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
+                  >
+                    {loading ? "Retrieving..." : "Retrieve ID"}
                   </button>
                 </div>
-              )}
-              {successMessage && (
-                <p className="mt-4 text-[#006400]">{successMessage}</p>
-              )}
-              {errorMessage && (
-                <p className="mt-4 text-red-500">{errorMessage}</p>
-              )}
-            </Modal>
-          )}
+                {eventId && (
+                  <div className="mt-4">
+                    <p className="text-lg md:text-xl text-[#006400] mb-3">
+                      Your Event ID: {eventId}
+                    </p>
+                    <button
+                      onClick={downloadId}
+                      disabled={loading}
+                      className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
+                    >
+                      {loading ? "Downloading..." : "Download ID (PDF)"}
+                    </button>
+                  </div>
+                )}
+                {successMessage && (
+                  <p className="mt-4 text-[#006400]">{successMessage}</p>
+                )}
+                {errorMessage && (
+                  <p className="mt-4 text-red-500">{errorMessage}</p>
+                )}
+              </Modal>
+            )}
 
-          {eventId && showForm === null && (
-            <div className="mt-6 md:mt-8">
-              <p className="text-lg md:text-xl text-[#006400] mb-3">
-                Your Event ID: {eventId}
-              </p>
-              <button
-                onClick={downloadId}
-                disabled={loading}
-                className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
-              >
-                {loading ? "Downloading..." : "Download ID (PDF)"}
-              </button>
-            </div>
-          )}
-        </main>
+            {eventId && showForm === null && (
+              <div className="mt-6 md:mt-8">
+                <p className="text-lg md:text-xl text-[#006400] mb-3">
+                  Your Event ID: {eventId}
+                </p>
+                <button
+                  onClick={downloadId}
+                  disabled={loading}
+                  className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
+                >
+                  {loading ? "Downloading..." : "Download ID (PDF)"}
+                </button>
+              </div>
+            )}
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
