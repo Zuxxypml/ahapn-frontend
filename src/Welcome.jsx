@@ -125,7 +125,7 @@ export function Welcome() {
   const [registeredCount, setRegisteredCount] = useState(null);
 
   const today = new Date();
-  const lateRegistrationStart = new Date("2025-07-01"); // Adjust when late registration start
+  const lateRegistrationStart = new Date("2025-04-26"); // Adjust when late registration start
   const lateRegistrationPeriod = today >= lateRegistrationStart;
 
   function calculateTimeLeft() {
