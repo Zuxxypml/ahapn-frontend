@@ -289,6 +289,11 @@ export function Welcome() {
       setLoading(false);
     }
   };
+  // Inside your component (e.g Welcome.jsx)
+  const today = new Date();
+  const lateRegistrationStart = new Date("2025-04-26"); // 👈 set your late reg start date here
+  const lateRegistrationPeriod = today >= lateRegistrationStart;
+
   const [registeredCount, setRegisteredCount] = useState(null);
 
   useEffect(() => {
@@ -473,7 +478,7 @@ export function Welcome() {
                     required
                     className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
                   />
-                  <p className="text-gray-600 text-xs mt-1">
+                  {/* <p className="text-gray-600 text-xs mt-1">
                     Contact admin on{" "}
                     <a
                       href="tel:08079238160"
@@ -482,11 +487,37 @@ export function Welcome() {
                       08079238160
                     </a>{" "}
                     to purchase a Reg Number.
-                  </p>
+                  </p> */}
                   {errors.regId && (
                     <p className="text-red-500 text-xs mt-1">{errors.regId}</p>
                   )}
                 </div>
+                {/* Conditionally show Late Registration Code */}
+                {lateRegistrationPeriod && (
+                  <div>
+                    <input
+                      name="lateRegId"
+                      type="text"
+                      placeholder="Late Registration Code"
+                      value={formData.lateRegId}
+                      onChange={handleChange}
+                      required
+                      className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                    />
+
+                    <p className="text-gray-600 text-xs mt-1">
+                      Contact admin on{" "}
+                      <a
+                        href="tel:08079238160"
+                        className="text-[#006400] underline"
+                      >
+                        08079238160
+                      </a>{" "}
+                      to purchase late Reg code.
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <input
                     type="file"
