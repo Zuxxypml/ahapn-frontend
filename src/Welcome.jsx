@@ -545,9 +545,9 @@ export function Welcome() {
                 <button
                   onClick={() => setShowForm("waitlist")}
                   className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
-                  aria-label="Join the Waitlist"
+                  aria-label="Register"
                 >
-                  Join the Waitlist
+                  Register
                 </button>
                 <button
                   onClick={() => setShowForm("retrieve")}
@@ -566,10 +566,7 @@ export function Welcome() {
             )}
 
             {showForm === "waitlist" && (
-              <Modal
-                title="Join the Waitlist"
-                onClose={() => setShowForm(null)}
-              >
+              <Modal title="Register" onClose={() => setShowForm(null)}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <input
