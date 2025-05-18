@@ -127,8 +127,10 @@ export function Welcome() {
   const [registeredCount, setRegisteredCount] = useState(null);
 
   const today = new Date();
-  const lateRegistrationStart = new Date("2025-07-01"); // Adjust when late registration start
-  const lateRegistrationPeriod = today >= lateRegistrationStart;
+  const eventEndDate = new Date("2025-08-09");
+  const isEventOver = today > eventEndDate;
+  const lateRegistrationStart = new Date("2025-07-01");
+  const lateRegistrationPeriod = today >= lateRegistrationStart && !isEventOver;
 
   function calculateTimeLeft() {
     const eventDate = new Date("2025-08-04");
@@ -155,8 +157,10 @@ export function Welcome() {
         console.error("Error fetching registered count", err);
       }
     }
-    fetchRegisteredCount();
-  }, []);
+    if (!isEventOver) {
+      fetchRegisteredCount();
+    }
+  }, [isEventOver]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -202,7 +206,7 @@ export function Welcome() {
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Only JPEG and PNG files are allowed.");
-      e.target.value = null; // 🚀 clear the input file if invalid
+      e.target.value = null;
       setImage(null);
       setImagePreview(null);
       return;
@@ -210,7 +214,7 @@ export function Welcome() {
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image must be less than 5MB.");
-      e.target.value = null; // 🚀 clear the input file if too big
+      e.target.value = null;
       setImage(null);
       setImagePreview(null);
       return;
@@ -274,7 +278,6 @@ export function Welcome() {
       toast.error("Enter your email to retrieve ID.");
       setSuccessMessage("");
       setErrorMessage("");
-
       return;
     }
 
@@ -327,6 +330,130 @@ export function Welcome() {
     }
   };
 
+  // const downloadCertificate = async () => {
+  //   if (!retrieveEmail) {
+  //     toast.error("Enter your email to download certificate.");
+  //     return;
+  //   }
+  //   setLoading(true);
+  //   try {
+  //     const response = await axios.get(
+  //       `${API_URL}/api/download-certificate/${retrieveEmail}`,
+  //       { responseType: "blob" }
+  //     );
+  //     const url = URL.createObjectURL(new Blob([response.data]));
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.download = `ahapn_certificate_${retrieveEmail}.pdf`;
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     link.remove();
+  //     URL.revokeObjectURL(url);
+  //     toast.success("Certificate downloaded successfully!");
+  //   } catch (error) {
+  //     toast.error(
+  //       error.response?.data?.message || "Error downloading certificate."
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  const downloadCertificate = async () => {
+    if (!retrieveEmail) {
+      toast.error("Please enter your registered email address");
+      return;
+    }
+
+    // Validate email format
+    if (!/^\S+@\S+\.\S+$/.test(retrieveEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/download-certificate/${retrieveEmail}`,
+        {
+          responseType: "blob",
+          headers: {
+            Accept: "application/pdf",
+          },
+          validateStatus: function (status) {
+            // Handle all expected status codes
+            return (
+              status === 200 ||
+              status === 403 ||
+              status === 404 ||
+              status === 500
+            );
+          },
+        }
+      );
+
+      // Handle different response statuses
+      if (response.status === 404) {
+        toast.error("No registration found with this email address");
+        return;
+      }
+
+      if (response.status === 403) {
+        // Extract the release date from the error message
+        const releaseDate =
+          response.data.message?.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+        if (releaseDate) {
+          toast.error(
+            `Certificates will be available after ${new Date(
+              releaseDate
+            ).toLocaleDateString()}`
+          );
+        } else {
+          toast.error("Certificates are not yet available for download");
+        }
+        return;
+      }
+
+      if (response.status === 500) {
+        toast.error("Server error while generating certificate");
+        return;
+      }
+
+      // Successful response - create download
+      const contentDisposition = response.headers["content-disposition"];
+      let filename = `AHAPN_Certificate_${retrieveEmail}.pdf`;
+
+      // Extract filename from Content-Disposition if available
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Certificate downloaded successfully!");
+    } catch (error) {
+      console.error("Certificate download error:", error);
+
+      if (error.code === "ERR_NETWORK") {
+        toast.error("Network error - please check your connection");
+      } else {
+        toast.error("Error downloading certificate");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
@@ -363,15 +490,17 @@ export function Welcome() {
                 <span className="absolute text-base md:text-lg">+</span>
               </div>
             </div>
-            <div className="mb-4 md:mb-6">
-              <div className="inline-block bg-white border-2 border-[#006400] px-4 py-2 md:px-6 md:py-3 rounded-lg text-xl md:text-3xl text-[#006400] font-bold relative">
-                {timeLeft.days} Days, {timeLeft.hours} Hrs, {timeLeft.minutes}{" "}
-                Mins, {timeLeft.seconds} Secs
-                <span className="absolute left-0 top-1/2 w-1 md:w-2 h-6 md:h-8 bg-[#006400] transform -translate-y-1/2"></span>
-                <span className="absolute right-0 top-1/2 w-1 md:w-2 h-6 md:h-8 bg-[#006400] transform -translate-y-1/2"></span>
+            {!isEventOver && (
+              <div className="mb-4 md:mb-6">
+                <div className="inline-block bg-white border-2 border-[#006400] px-4 py-2 md:px-6 md:py-3 rounded-lg text-xl md:text-3xl text-[#006400] font-bold relative">
+                  {timeLeft.days} Days, {timeLeft.hours} Hrs, {timeLeft.minutes}{" "}
+                  Mins, {timeLeft.seconds} Secs
+                  <span className="absolute left-0 top-1/2 w-1 md:w-2 h-6 md:h-8 bg-[#006400] transform -translate-y-1/2"></span>
+                  <span className="absolute right-0 top-1/2 w-1 md:w-2 h-6 md:h-8 bg-[#006400] transform -translate-y-1/2"></span>
+                </div>
               </div>
-            </div>
-            {registeredCount !== null && (
+            )}
+            {registeredCount !== null && !isEventOver && (
               <h4 className="text-xl md:text-2xl font-bold text-[#006400] mb-3">
                 {registeredCount} Registered
               </h4>
@@ -379,7 +508,7 @@ export function Welcome() {
 
             <h3 className="text-xl md:text-2xl text-[#006400] mb-3 md:mb-4">
               Theme: Innovations in Pharmaceutical Care Delivery for Equitable
-              Patients’ Healthcare
+              Patients' Healthcare
             </h3>
             <h2 className="text-2xl md:text-3xl font-bold text-[#006400] mb-6 md:mb-8">
               4th – 9th August 2025
@@ -401,22 +530,34 @@ export function Welcome() {
               </div>
             </div>
 
-            <div className="mb-8 flex flex-col md:flex-row justify-center gap-4">
-              <button
-                onClick={() => setShowForm("waitlist")}
-                className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
-                aria-label="Join the Waitlist"
-              >
-                Join the Waitlist
-              </button>
-              <button
-                onClick={() => setShowForm("retrieve")}
-                className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
-                aria-label="Download ID for Returning Users"
-              >
-                Download ID (Returning Users)
-              </button>
-            </div>
+            {isEventOver ? (
+              <div className="mb-8 flex flex-col md:flex-row justify-center gap-4">
+                <button
+                  onClick={() => setShowForm("certificate")}
+                  className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
+                  aria-label="Download Certificate"
+                >
+                  Download Certificate
+                </button>
+              </div>
+            ) : (
+              <div className="mb-8 flex flex-col md:flex-row justify-center gap-4">
+                <button
+                  onClick={() => setShowForm("waitlist")}
+                  className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
+                  aria-label="Join the Waitlist"
+                >
+                  Join the Waitlist
+                </button>
+                <button
+                  onClick={() => setShowForm("retrieve")}
+                  className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
+                  aria-label="Download ID for Returning Users"
+                >
+                  Download ID (Returning Users)
+                </button>
+              </div>
+            )}
 
             {loading && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -507,23 +648,12 @@ export function Welcome() {
                       required
                       className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
                     />
-                    {/* <p className="text-gray-600 text-xs mt-1">
-                    Contact admin on{" "}
-                    <a
-                      href="tel:08079238160"
-                      className="text-[#006400] underline"
-                    >
-                      08079238160
-                    </a>{" "}
-                    to purchase a Reg Number.
-                  </p> */}
                     {errors.regId && (
                       <p className="text-red-500 text-xs mt-1">
                         {errors.regId}
                       </p>
                     )}
                   </div>
-                  {/* Conditionally show Late Registration Code */}
                   {lateRegistrationPeriod && (
                     <div>
                       <input
@@ -630,7 +760,31 @@ export function Welcome() {
               </Modal>
             )}
 
-            {eventId && showForm === null && (
+            {showForm === "certificate" && (
+              <Modal
+                title="Download Your Certificate"
+                onClose={() => setShowForm(null)}
+              >
+                <div className="space-y-4">
+                  <input
+                    type="email"
+                    placeholder="Enter your registered email to download certificate"
+                    value={retrieveEmail}
+                    onChange={(e) => setRetrieveEmail(e.target.value)}
+                    className="w-full p-2 md:p-3 border-2 border-[#006400] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006400]"
+                  />
+                  <button
+                    onClick={downloadCertificate}
+                    disabled={loading}
+                    className="w-full p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] disabled:opacity-50"
+                  >
+                    {loading ? "Downloading..." : "Download Certificate"}
+                  </button>
+                </div>
+              </Modal>
+            )}
+
+            {eventId && showForm === null && !isEventOver && (
               <div className="mt-6 md:mt-8">
                 <p className="text-lg md:text-xl text-[#006400] mb-3">
                   Your Event ID: {eventId}
