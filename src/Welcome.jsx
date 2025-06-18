@@ -552,9 +552,9 @@ export function Welcome() {
                 <button
                   onClick={() => setShowForm("retrieve")}
                   className="p-2 md:p-3 bg-[#006400] text-white font-bold rounded-lg hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-[#006400] w-full md:w-auto"
-                  aria-label="Download ID for Returning Users"
+                  aria-label="Download Event ID"
                 >
-                  Download ID (Returning Users)
+                  Download Event ID
                 </button>
               </div>
             )}
